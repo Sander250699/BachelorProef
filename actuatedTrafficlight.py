@@ -4,7 +4,8 @@ from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
 from flow.controllers import SimCarFollowingController, GridRouter
-from flow.envs import TrafficLightGridEnv
+#Environment used to train traffic lights, dit is een sub klasse van TrafficLightGridEnv, dus alle variabelen voor die klasse moeten ook meegegeven worden
+from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
 sim_params = SumoParams(render=True, sim_step=0.2, restart_instance=False)
 # params for grid env
@@ -26,18 +27,8 @@ grid_array = {
     }
 
 # traffic lights
-phases = [{"duration": "31", "state": "GrGr"},
-          {"duration": "6", "state": "yryr"},
-          {"duration": "31", "state": "rGrG"},
-          {"duration": "6", "state": "ryry"}] 
+# wanneer verkeers lichten onder RL vallen moeten de verkeerslichten anders gedefienieerd zijn, zie flow voor de nodige uitleg 
 
-tl_logic = TrafficLightParams()
-tl_logic.add(
-    "center0",
-    tls_type="static",
-    programID=1,
-    offset=None,
-    phases=phases)
 # vehicles
     # add the starting vehicles 
 vehicles = VehicleParams()
@@ -77,7 +68,8 @@ for edge in outer_edges:
 
 # bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
 # dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
-# mee worden? 
+# mee worden? => Hierbij nog niet zeker van, 
+# ToDO: ZEKER NOG EXTRA UITLEG OVER VRAGEN
 # initialisatie van de routes 
 routes = defaultdict(list)              # defaultdict is unordered collection of data values
     # routes from the left to the right
@@ -98,13 +90,16 @@ print(routes)
 
 # Net Params
 additional_net_params = {
-    "grid_array": grid_array, "speed_limit": 35,
+    "grid_array": grid_array, "speed_limit": 50,
     "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True, "routes": routes}
+    "traffic_lights": True}
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 # Env Params
-additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True}
+# => switch_time is de minimum tijd dat een licht in een bepaalde state zit
+# => num_observed aantal vehicles dat geobservered wordt vanuit elke richting van het kruispunt
+# => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
+additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True, "num_observed":2,"target_velocity": 50}
 env_params = EnvParams(additional_params=additional_env_params)
 
 # Initial config
@@ -113,9 +108,9 @@ initial_config = InitialConfig(spacing="uniform", perturbation=1)
 # Flow Params
 flow_params = dict(
     # name of the experiment
-    exp_tag="onebyone",
+    exp_tag="RL_traffic_lights",
     # name of the flow environment the experiment is running on
-    env_name=TrafficLightGridEnv,
+    env_name=TrafficLightGridPOEnv,
     # name of the network class the experiment uses
     network=TrafficLightGridNetwork,
     # simulator that is used by the experiment

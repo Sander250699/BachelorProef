@@ -24,6 +24,25 @@ grid_array = {
     "cars_left": num_cars_left, "cars_right": num_cars_right, 
     "cars_top": num_cars_top, "cars_bot": num_cars_bottom
     }
+# bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
+# dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
+# mee worden? 
+# initialisatie van de routes 
+routes = defaultdict(list)              # defaultdict is unordered collection of data values
+    # routes from the left to the right
+for i in range(rows):
+    bot_id = "bot{}_0".format(i)
+    top_id = "top{}_{}".format(i, columns)
+    for j in range(columns + 1):
+        routes[bot_id] += ["bot{}_{}".format(i, j)]
+        routes[top_id] += ["top{}_{}".format(i, columns - j)]
+    # routes from the top to the bottom
+for j in range(columns):
+    left_id = "left{}_{}".format(rows, j)
+    right_id = "right0_{}".format(j)
+    for i in range(rows + 1):
+        routes[left_id] += ["left{}_{}".format(rows - i, j)]
+        routes[right_id] += ["right{}_{}".format(i, j)]
 
 # traffic lights
 phases = [{"duration": "31", "state": "GrGr"},
@@ -58,7 +77,6 @@ outer_edges += ["right0_{}".format(i) for i in range(rows)]
 outer_edges += ["bot{}_0".format(i) for i in range(columns)]
 outer_edges += ["top{}_{}".format(i, columns) for i in range(rows)]
 inflow = InFlows()
-print(outer_edges)
 for edge in outer_edges:
     if edge=="left1_0":
         prob=0.10
@@ -71,40 +89,22 @@ for edge in outer_edges:
     inflow.add(
         veh_type="human",
         edge=edge,
-        probability=prob,
-        depart_lane=1,
-        depart_speed="max")
-
-# bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
-# dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
-# mee worden? 
-# initialisatie van de routes 
-routes = defaultdict(list)              # defaultdict is unordered collection of data values
-    # routes from the left to the right
-for i in range(rows):
-    bot_id = "bot{}_0".format(i)
-    top_id = "top{}_{}".format(i, columns)
-    for j in range(columns + 1):
-        routes[bot_id] += ["bot{}_{}".format(i, j)]
-        routes[top_id] += ["top{}_{}".format(i, columns - j)]
-    # routes from the top to the bottom
-for j in range(columns):
-    left_id = "left{}_{}".format(rows, j)
-    right_id = "right0_{}".format(j)
-    for i in range(rows + 1):
-        routes[left_id] += ["left{}_{}".format(rows - i, j)]
-        routes[right_id] += ["right{}_{}".format(i, j)]
-print(routes)
+        #probability=prob,
+        vehs_per_hour=2000,
+        depart_lane=0,
+        depart_speed="max",
+        route="bot0_0"
+        )
 
 # Net Params
 additional_net_params = {
     "grid_array": grid_array, "speed_limit": 35,
     "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True} #, "routes": routes}
+    "traffic_lights": True, "routes": routes}
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 # Env Params
-additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True}
+additional_env_params = {"switch_time": 3.0, "tl_type": "actuated", "discrete": True}
 env_params = EnvParams(additional_params=additional_env_params)
 
 # Initial config
