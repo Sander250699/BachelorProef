@@ -55,7 +55,7 @@ vehicles.add(
     ),
     routing_controller=(GridRouter, {}),
     num_vehicles=tot_cars)
-# inflow 
+# inflow, probleem met de inflow is er nog steeds, geen routes gedefinieerd
 inflow = InFlows()
 outer_edges = []
 outer_edges += ["left{}_{}".format(rows, i) for i in range(columns)]
