@@ -5,7 +5,7 @@ from flow.controllers import SimCarFollowingController, GridRouter
 from flow.envs import TrafficLightGridEnv
 from flow.core.experiment import Experiment
 sim_params = SumoParams(render=True, sim_step=0.2,restart_instance=True)
-
+# bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
 # params for grid env
 inner_length = 300
 long_length = 500

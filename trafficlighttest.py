@@ -1,11 +1,12 @@
 
+from collections import defaultdict 
 from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.envs import TrafficLightGridEnv
 from flow.core.experiment import Experiment
-sim_params = SumoParams(render=True, sim_step=0.2, restart_instance=True)
+sim_params = SumoParams(render=True, sim_step=0.2, restart_instance=False)
 # params for grid env
 inner_length = 300
 long_length = 500
@@ -57,6 +58,7 @@ outer_edges += ["right0_{}".format(i) for i in range(rows)]
 outer_edges += ["bot{}_0".format(i) for i in range(columns)]
 outer_edges += ["top{}_{}".format(i, columns) for i in range(rows)]
 inflow = InFlows()
+print(outer_edges)
 for edge in outer_edges:
     if edge=="left1_0":
         prob=0.10
@@ -70,15 +72,36 @@ for edge in outer_edges:
         veh_type="human",
         edge=edge,
         probability=prob,
-        depart_lane="first",
+        depart_lane=1,
         depart_speed="max")
+
+# bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
+# dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
+# mee worden? 
+# initialisatie van de routes 
+routes = defaultdict(list)              # defaultdict is unordered collection of data values
+    # routes from the left to the right
+for i in range(rows):
+    bot_id = "bot{}_0".format(i)
+    top_id = "top{}_{}".format(i, columns)
+    for j in range(columns + 1):
+        routes[bot_id] += ["bot{}_{}".format(i, j)]
+        routes[top_id] += ["top{}_{}".format(i, columns - j)]
+    # routes from the top to the bottom
+for j in range(columns):
+    left_id = "left{}_{}".format(rows, j)
+    right_id = "right0_{}".format(j)
+    for i in range(rows + 1):
+        routes[left_id] += ["left{}_{}".format(rows - i, j)]
+        routes[right_id] += ["right{}_{}".format(i, j)]
+print(routes)
 
 # Net Params
 additional_net_params = {
     "grid_array": grid_array, "speed_limit": 35,
     "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True}
-net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
+    "traffic_lights": True} #, "routes": routes}
+net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 # Env Params
 additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True}
