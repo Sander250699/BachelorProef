@@ -4,9 +4,19 @@ from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, In
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
-sim_params = SumoParams(render=True, sim_step=0.2,restart_instance=True)
+sim_params = SumoParams(render=True, sim_step=1,restart_instance=True)
+'''
+Opstelling van het netwerk:
+    |   |   |
+   -6---7---8--
+   -3---4---5--
+   -0---1---2--
+    |   |   | 
+'''
+
 # bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
 # params for grid env
+HORIZON = 400               # Time horizon of a single rollout
 inner_length = 300
 long_length = 500
 short_lengh = 500
@@ -16,36 +26,19 @@ num_cars_left = 1
 num_cars_right = 1
 num_cars_top = 1
 num_cars_bottom = 1
-tot_cars = (num_cars_left + num_cars_right)*rows + (num_cars_top + num_cars_bottom)*columns
+enterSpeed = 30 
+tot_cars = (num_cars_left + num_cars_right)*columns + (num_cars_top + num_cars_bottom)*rows
 grid_array = {
-    "short_length": short_lengh, "inner_length": inner_length, 
-    "long_length": long_length, "row_num": rows, "col_num": columns,
-    "cars_left": num_cars_left, "cars_right": num_cars_right, 
-    "cars_top": num_cars_top, "cars_bot": num_cars_bottom
+    "short_length": short_lengh, 
+    "inner_length": inner_length, 
+    "long_length": long_length, 
+    "row_num": rows, 
+    "col_num": columns,
+    "cars_left": num_cars_left, 
+    "cars_right": num_cars_right, 
+    "cars_top": num_cars_top, 
+    "cars_bot": num_cars_bottom
     }
-# traffic lights
-'''
-tl_logic = TrafficLightParams()
-Opstelling gaat van volgende naart zijn 
-    |   |   |
-   -6---7---8--
-   -3---4---5--
-   -0---1---2--
-    |   |   | 
-nodes = ["center0","center1","center2","center3","center4","center5","center6","center7","center8",]
-phases = [{"duration": "31", "state": "GrGr"},
-          {"duration": "6", "state": "yryr"},
-          {"duration": "31", "state": "rGrG"},
-          {"duration": "6", "state": "ryry"}]
-for nodeid in nodes:
-    tl_logic.add(
-    nodeid,
-    tls_type="static",
-    programID=1,
-    offset=None,
-    phases=phases)
-'''
-
 # vehicles
 vehicles = VehicleParams()
 vehicles.add(
@@ -53,11 +46,15 @@ vehicles.add(
     acceleration_controller=(SimCarFollowingController, {}),
     car_following_params=SumoCarFollowingParams(
         speed_mode="right_of_way",
-        min_gap=2.5  
+        min_gap=2.5,
+        max_speed=enterSpeed,
+        decel=7.5,   
     ),
     routing_controller=(GridRouter, {}),
     num_vehicles=tot_cars)
-# inflow => probleem van de inflow nog oplossen, geen gekende route
+
+# inflow 
+# outer_edges of the network (zie traffic_light_grid.py file)
 inflow = InFlows()
 outer_edges = []
 outer_edges += ["left{}_{}".format(rows, i) for i in range(columns)]
@@ -97,23 +94,34 @@ for edge in outer_edges:
         edge=edge,
         veh_type="human",
         probability=prob,
-        depart_lane=1,
-        depart_speed="max")
+        #vehs_er_hour=edge_inflow
+        depart_lane="free",
+        depart_speed=enterSpeed)
 # net params 
 additional_net_params = {
-    "grid_array": grid_array, "speed_limit": 50,
-    "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True}
-net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
+    "grid_array": grid_array, 
+    "speed_limit": 50,
+    "horizontal_lanes": 1, 
+    "vertical_lanes": 1}
+    #"traffic_lights": True}
+net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
+
 # env params
-additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True, "num_observed":2,"target_velocity": 50}
-env_params = EnvParams(additional_params=additional_env_params)
+additional_env_params = {
+    "switch_time": 3.0, 
+    "tl_type": "controlled", 
+    "discrete": True, 
+    "num_observed":2,
+    "target_velocity": 50
+    }
+env_params = EnvParams(horizon=HORIZON, additional_params=additional_env_params)
 # initial config
-initial_config = InitialConfig(spacing="random", perturbation=1)
+initial_config = InitialConfig(spacing="custom", shuffle=True)
+
 # flow params
 flow_params = dict(
     # name of the experiment
-    exp_tag="gridActuated",
+    exp_tag="RL_traffic_lights_grid",
     # name of the flow environment the experiment is running on
     env_name=TrafficLightGridPOEnv,
     # name of the network class the experiment uses

@@ -1,5 +1,4 @@
 
-from collections import defaultdict 
 from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
@@ -27,36 +26,8 @@ grid_array = {
 # bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
 # dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
 # mee worden? 
-# initialisatie van de routes 
-routes = defaultdict(list)              # defaultdict is unordered collection of data values
-    # routes from the left to the right
-for i in range(rows):
-    bot_id = "bot{}_0".format(i)
-    top_id = "top{}_{}".format(i, columns)
-    for j in range(columns + 1):
-        routes[bot_id] += ["bot{}_{}".format(i, j)]
-        routes[top_id] += ["top{}_{}".format(i, columns - j)]
-    # routes from the top to the bottom
-for j in range(columns):
-    left_id = "left{}_{}".format(rows, j)
-    right_id = "right0_{}".format(j)
-    for i in range(rows + 1):
-        routes[left_id] += ["left{}_{}".format(rows - i, j)]
-        routes[right_id] += ["right{}_{}".format(i, j)]
 
-# traffic lights
-phases = [{"duration": "31", "state": "GrGr"},
-          {"duration": "6", "state": "yryr"},
-          {"duration": "31", "state": "rGrG"},
-          {"duration": "6", "state": "ryry"}] 
 
-tl_logic = TrafficLightParams()
-tl_logic.add(
-    "center0",
-    tls_type="static",
-    programID=1,
-    offset=None,
-    phases=phases)
 # vehicles
     # add the starting vehicles 
 vehicles = VehicleParams()
@@ -93,22 +64,23 @@ for edge in outer_edges:
         vehs_per_hour=2000,
         depart_lane=0,
         depart_speed="max",
-        route="bot0_0"
         )
 
 # Net Params
 additional_net_params = {
     "grid_array": grid_array, "speed_limit": 35,
     "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True, "routes": routes}
+    "traffic_lights": True}
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 # Env Params
-additional_env_params = {"switch_time": 3.0, "tl_type": "actuated", "discrete": True}
+additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True}
 env_params = EnvParams(additional_params=additional_env_params)
 
 # Initial config
-initial_config = InitialConfig(spacing="uniform", perturbation=1)
+# Wanneer je als spacing unifrom of random gebruikt dan kent het programma de routes niet, om dit op te lossen 
+# moet er een custom spacing gebruikt worden
+initial_config = InitialConfig(spacing='custom', shuffle=True)
 
 # Flow Params
 flow_params = dict(
