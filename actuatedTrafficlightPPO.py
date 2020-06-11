@@ -158,10 +158,10 @@ if __name__ == "__main__":
     config = agent_cls._default_config.copy()
     config["num_workers"] = N_CPUS - 1                                          # number of parallel workers
     config["train_batch_size"] = HORIZON * N_ROLLOUTS                           # batch size
-    config["gamma"] = 0.999                                                     # discount rate
+    config["gamma"] = 0.9                                                       # discount rate, hoe hoger deze waarde hoe belangrijker de toekomstige rewards zijn
     config["model"].update({"fcnet_hiddens": [16, 16]})                         # size of hidden layers in network
     config["use_gae"] = True                                                    # using generalized advantage estimation
-    config["lambda"] = 0.97  
+    config["lambda"] = 0.97                                                     # ALPHA?
     config["sgd_minibatch_size"] = min(16 * 1024, config["train_batch_size"])   # stochastic gradient descent
     config["kl_target"] = 0.02                                                  # target KL divergence
     config["num_sgd_iter"] = 10                                                 # number of SGD iterations
@@ -187,14 +187,15 @@ if __name__ == "__main__":
             "config": {
                 **config
             },
-            "checkpoint_freq": 1,                   # number of iterations between checkpoints
+            "checkpoint_freq": 10,                   # number of iterations between checkpoints
             "checkpoint_at_end": True,              # generate a checkpoint at the end
             "max_failures": 999,
             "stop": {                               # stopping conditions
-                "training_iteration": 5,            # number of iterations to stop after
+                "training_iteration": 500,            # number of iterations to stop after
             },
         },
     })
+    # Vragen: => wat zijn de ideale checkpoint_freq en training_iteration? Of moet dit proefondervindelijk gevonden worden
 
 
     '''
