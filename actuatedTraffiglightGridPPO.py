@@ -1,3 +1,4 @@
+# omgeving Parameters
 from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
@@ -5,6 +6,17 @@ from flow.controllers import SimCarFollowingController, GridRouter
 from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
 
+# agent Parameters
+import json
+import ray 
+try:
+    from ray.rllib.agents.agent import get_agent_class
+except ImportError:
+    from ray.rllib.agents.registry import get_agent_class
+from ray.tune import run_experiments
+from ray.tune.registry import register_env
+from flow.utils.registry import make_create_env
+from flow.utils.rllib import FlowParamsEncoder
 
 def getOmgeving(HORIZON):
     sim_params = SumoParams(render=False, sim_step=1,restart_instance=True)
@@ -149,7 +161,12 @@ def getOmgeving(HORIZON):
 if __name__ == "__main__":
     HORIZON = 400               # Time horizon of a single rollout
     flow_params = getOmgeving(HORIZON)
-    
+    N_CPUS = 2
+    N_ROLLOUTS = 2
+    ray.init(
+        num_cpus=N_CPUS,
+        object_store_memory=50*1024*1024
+    )
     alg_run = "PPO"
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
@@ -183,11 +200,11 @@ if __name__ == "__main__":
             "config": {
                 **config
             },
-            "checkpoint_freq": 10,                   # number of iterations between checkpoints
+            "checkpoint_freq": 1,                   # number of iterations between checkpoints
             "checkpoint_at_end": True,              # generate a checkpoint at the end
             "max_failures": 999,
             "stop": {                               # stopping conditions
-                "training_iteration": 500,            # number of iterations to stop after
+                "training_iteration": 5,            # number of iterations to stop after
             },
         },
     })

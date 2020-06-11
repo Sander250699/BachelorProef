@@ -142,43 +142,42 @@ def getOmgeving(HORIZON):
 
 
 if __name__ == "__main__":
-    HORIZON = 400               # Time horizon of a single rollout, simulatie step = 1 sec => 400 seconden loopt de simulatie
+    HORIZON = 400
     flow_params = getOmgeving(HORIZON)
-    # initialiseren van ray 
     N_CPUS = 2
-    N_ROLLOUTS = 1
+    N_ROLLOUTS = 2
     ray.init(
         num_cpus=N_CPUS,
         object_store_memory=50*1024*1024
     )
 
-    alg_run = "PPO"
+    alg_run = "DQN"
+        # de nodige parameters
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
-    config["num_workers"] = N_CPUS - 1                                          # number of parallel workers
-    config["train_batch_size"] = HORIZON * N_ROLLOUTS                           # batch size
-    config["gamma"] = 0.9                                                       # discount rate, hoe hoger deze waarde hoe belangrijker de toekomstige rewards zijn
-    config["model"].update({"fcnet_hiddens": [16, 16]})                         # size of hidden layers in network
-    config["use_gae"] = True                                                    # using generalized advantage estimation
-    config["lambda"] = 0.97                                                     # ALPHA?
-    config["sgd_minibatch_size"] = min(16 * 1024, config["train_batch_size"])   # stochastic gradient descent
-    config["kl_target"] = 0.02                                                  # target KL divergence
-    config["num_sgd_iter"] = 10                                                 # number of SGD iterations
-    config["horizon"] = HORIZON                                                 # rollout horizon
+    config["num_workers"] = N_CPUS - 1
+    config["horizon"] = HORIZON
+    config["train_batch_size"] = HORIZON * N_ROLLOUTS
+    # dueling, DQN maakt gebruik van een deep neural network ipv een Q table
+    # bij dueling gaat men 2 van deze neural networks gaan gebruiken
+    # Input = observation 
+    # output = alle acties dat de agent kan nemen
+    # https://medium.com/@parsa_h_m/deep-reinforcement-learning-dqn-double-dqn-dueling-dqn-noisy-dqn-and-dqn-with-prioritized-551f621a9823
+    config["dueling"] = False
+    # double_q, gaat 2 van deze neural networks gaan gebruiken, waarbij het tweede
+    # een copy is van de laatste episode van het eerste model
+    config["double_q"] = False
     # save the flow params for replay
     flow_json = json.dumps(flow_params, cls=FlowParamsEncoder, sort_keys=True,
                         indent=4)                                               # generating a string version of flow_params
     config['env_config']['flow_params'] = flow_json                             # adding the flow_params to config dict
     config['env_config']['run'] = alg_run
-
-    # Call the utility function make_create_env to be able to 
+        # Call the utility function make_create_env to be able to 
     # register the Flow env for this experiment
     create_env, gym_name = make_create_env(params=flow_params, version=0)
 
     # Register as rllib env with Gym
     register_env(gym_name, create_env)
-
-
     trials = run_experiments({
         flow_params["exp_tag"]: {
             "run": alg_run,
@@ -186,15 +185,14 @@ if __name__ == "__main__":
             "config": {
                 **config
             },
-            "checkpoint_freq": 10,                   # number of iterations between checkpoints
+            "checkpoint_freq": 1,                   # number of iterations between checkpoints
             "checkpoint_at_end": True,              # generate a checkpoint at the end
             "max_failures": 999,
             "stop": {                               # stopping conditions
-                "training_iteration": 500,            # number of iterations to stop after
+                "training_iteration": 1,            # number of iterations to stop after
             },
         },
     })
-    # Vragen: => wat zijn de ideale checkpoint_freq en training_iteration? Of moet dit proefondervindelijk gevonden worden
 
 
     '''

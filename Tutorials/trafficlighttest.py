@@ -1,115 +1,145 @@
-
+# import voor de omgeving
 from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
 from flow.controllers import SimCarFollowingController, GridRouter
-from flow.envs import TrafficLightGridEnv
+from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
-sim_params = SumoParams(render=True, sim_step=0.2, restart_instance=False)
-# params for grid env
-inner_length = 300
-long_length = 500
-short_lengh = 500
-rows = 1
-columns = 1
-num_cars_left = 1
-num_cars_right = 1
-num_cars_top = 1
-num_cars_bottom = 1
-tot_cars = (num_cars_left + num_cars_right)*rows + (num_cars_top + num_cars_bottom)*columns
-grid_array = {
-    "short_length": short_lengh, "inner_length": inner_length, 
-    "long_length": long_length, "row_num": rows, "col_num": columns,
-    "cars_left": num_cars_left, "cars_right": num_cars_right, 
-    "cars_top": num_cars_top, "cars_bot": num_cars_bottom
-    }
-# bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
-# dit valt misschien op te lossen door de routes in de code zelf te definieren en ze mee te geven met de net params, kunnen die daar echter gedefinieerd 
-# mee worden? 
+import os 
+import pandas as pd
 
 
-# vehicles
-    # add the starting vehicles 
-vehicles = VehicleParams()
-vehicles.add("human",
-             acceleration_controller=(SimCarFollowingController, {}),
-             car_following_params=SumoCarFollowingParams(
-                 speed_mode="right_of_way",
-                 min_gap=2.5  
-             ),
-             routing_controller=(GridRouter, {}),
-             num_vehicles=tot_cars)
 
-# inflow
+
+def getOmgeving(HORIZON):
+    sim_params = SumoParams(render=True, sim_step=1, restart_instance=True, emission_path='result')
+    # temp inflow 
+    edge_inflow = 300
+    # params for grid env
+    inner_length = 300
+    long_length = 500
+    short_lengh = 500
+    rows = 1
+    columns = 1
+    num_cars_left = 1
+    num_cars_right = 1
+    num_cars_top = 1
+    num_cars_bottom = 1
+    enterSpeed = 30
+    tot_cars = (num_cars_left + num_cars_right)*columns + (num_cars_top + num_cars_bottom)*rows
+    grid_array = {
+        "short_length": short_lengh, 
+        "inner_length": inner_length, 
+        "long_length": long_length, 
+        "row_num": rows, 
+        "col_num": columns,
+        "cars_left": num_cars_left, 
+        "cars_right": num_cars_right, 
+        "cars_top": num_cars_top, 
+        "cars_bot": num_cars_bottom
+        }
+    # vehicles
+        # add the starting vehicles 
+    vehicles = VehicleParams()
+    vehicles.add("human",
+                acceleration_controller=(SimCarFollowingController, {}),
+                car_following_params=SumoCarFollowingParams(
+                    speed_mode="right_of_way",
+                    min_gap=2.5,
+                    max_speed=enterSpeed,
+                    decel=7.5, 
+                ),
+                routing_controller=(GridRouter, {}),
+                num_vehicles=tot_cars)
+
+    # inflow
     # outer_edges of the network (zie traffic_light_grid.py file)
-outer_edges = []
-outer_edges += ["left{}_{}".format(rows, i) for i in range(columns)]
-outer_edges += ["right0_{}".format(i) for i in range(rows)]
-outer_edges += ["bot{}_0".format(i) for i in range(columns)]
-outer_edges += ["top{}_{}".format(i, columns) for i in range(rows)]
-inflow = InFlows()
-for edge in outer_edges:
-    if edge=="left1_0":
-        prob=0.10
-    elif edge=="right0_0":
-        prob=0.10
-    elif edge=="bot0_0":
-        prob=0.10
-    elif edge=="top0_1":
-        prob=0.10
-    inflow.add(
-        veh_type="human",
-        edge=edge,
-        #probability=prob,
-        vehs_per_hour=2000,
-        depart_lane=0,
-        depart_speed="max",
-        )
+    outer_edges = []
+    outer_edges += ["left{}_{}".format(rows, i) for i in range(columns)]
+    outer_edges += ["right0_{}".format(i) for i in range(rows)]
+    outer_edges += ["bot{}_0".format(i) for i in range(columns)]
+    outer_edges += ["top{}_{}".format(i, columns) for i in range(rows)]
+    inflow = InFlows()
+    for edge in outer_edges:
+        if edge=="left1_0":
+            prob=0.10
+        elif edge=="right0_0":
+            prob=0.10
+        elif edge=="bot0_0":
+            prob=0.10
+        elif edge=="top0_1":
+            prob=0.10
+        inflow.add(
+            veh_type="human",
+            edge=edge,
+            #vehs_per_hour=edge_inflow,
+            probability=prob,
+            depart_lane="free",
+            depart_speed=enterSpeed)
 
-# Net Params
-additional_net_params = {
-    "grid_array": grid_array, "speed_limit": 35,
-    "horizontal_lanes": 1, "vertical_lanes": 1,
-    "traffic_lights": True}
-net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
+    # Net Params
+    additional_net_params = {
+        "speed_limit": enterSpeed + 5,
+        "grid_array": grid_array, 
+        "horizontal_lanes": 1, 
+        "vertical_lanes": 1,
+        #"traffic_lights": True}
+    }
+    net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
-# Env Params
-additional_env_params = {"switch_time": 3.0, "tl_type": "controlled", "discrete": True}
-env_params = EnvParams(additional_params=additional_env_params)
+    # Env Params
+    # => switch_time is de minimum tijd dat een licht in een bepaalde state zit
+    # => num_observed aantal vehicles dat geobservered wordt vanuit elke richting van het kruispunt
+    # => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
+    additional_env_params = {
+        "switch_time": 3.0, 
+        "tl_type": "actuated",                # kan ook actuated/controlled zijn
+        "discrete": True, 
+        "num_observed":2,
+        "target_velocity": 50
+        }
+    env_params = EnvParams( horizon=HORIZON, additional_params=additional_env_params)
 
-# Initial config
-# Wanneer je als spacing unifrom of random gebruikt dan kent het programma de routes niet, om dit op te lossen 
-# moet er een custom spacing gebruikt worden
-initial_config = InitialConfig(spacing='custom', shuffle=True)
+    # Initial config
+    initial_config = InitialConfig(spacing='custom', shuffle=True)
 
-# Flow Params
-flow_params = dict(
-    # name of the experiment
-    exp_tag="onebyone",
-    # name of the flow environment the experiment is running on
-    env_name=TrafficLightGridEnv,
-    # name of the network class the experiment uses
-    network=TrafficLightGridNetwork,
-    # simulator that is used by the experiment
-    simulator='traci',
-    # simulation-related parameters
-    sim=sim_params,
-    # environment related parameters (see flow.core.params.EnvParams)
-    env=env_params,
-    # network-related parameters (see flow.core.params.NetParams and
-    # the network's documentation or ADDITIONAL_NET_PARAMS component)
-    net=net_params,
-    # vehicles to be placed in the network at the start of a rollout 
-    # (see flow.core.vehicles.Vehicles)
-    veh=vehicles,
-    # (optional) parameters affecting the positioning of vehicles upon 
-    # initialization/reset (see flow.core.params.InitialConfig)
-    initial=initial_config
-)
+    # Flow Params
+    flow_param = dict(
+        # name of the experiment
+        exp_tag="RL_traffic_lights_one_by_one",
+        # name of the flow environment the experiment is running on
+        env_name=TrafficLightGridPOEnv,
+        # name of the network class the experiment uses
+        network=TrafficLightGridNetwork,
+        # simulator that is used by the experiment
+        simulator='traci',
+        # simulation-related parameters
+        sim=sim_params,
+        # environment related parameters (see flow.core.params.EnvParams)
+        env=env_params,
+        # network-related parameters (see flow.core.params.NetParams and
+        # the network's documentation or ADDITIONAL_NET_PARAMS component)
+        net=net_params,
+        # vehicles to be placed in the network at the start of a rollout 
+        # (see flow.core.vehicles.Vehicles)
+        veh=vehicles,
+        # (optional) parameters affecting the positioning of vehicles upon 
+        # initialization/reset (see flow.core.params.InitialConfig)
+        initial=initial_config
+    )
+    return flow_param
 
-# runnen van de simulatie
+
+if __name__ == "__main__":
+    HORIZON = 400               # Time horizon of a single rollout, simulatie step = 1 sec => 400 seconden loopt de simulatie
+    flow_params = getOmgeving(HORIZON)
+    # runnen van de simulatie
     #number of time steps
-flow_params['env'].horizon = 3000
-exp = Experiment(flow_params)
+    print("run 1")
+    flow_params['env'].horizon = 400
+    exp = Experiment(flow_params)
     #run the simulation
-_ = exp.run(1, convert_to_csv=False)
+    _ = exp.run(1, convert_to_csv=True)
+    emission_location = os.path.join(exp.env.sim_params.emission_path, exp.env.network.name)
+    print(emission_location + '-emission.xml')
+    pd.read_csv(emission_location + '-emission.csv')
