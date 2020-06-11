@@ -1,0 +1,92 @@
+<add>
+        <!-- kruispunt links boven-->
+    <e1Detector id="0" lane="B4B3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="1" lane="B2B3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="2" lane="C3B3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="3" lane="A3B3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="0c" lane="B4B3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="1c" lane="B2B3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="2c" lane="C3B3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="3c" lane="A3B3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+	
+        <!-- kruispunt midden boven-->
+    <e1Detector id="4" lane="C4C3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="5" lane="C2C3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="6" lane="D3C3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="7" lane="B3C3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="4c" lane="C4C3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="5c" lane="C2C3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="6c" lane="D3C3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="7c" lane="B3C3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+        <!-- kruispunt rechts boven-->
+    <e1Detector id="8" lane="D4D3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="9" lane="D2D3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="10" lane="E3D3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="11" lane="C3D3_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="8c" lane="D4D3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="9c" lane="D2D3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="10c" lane="E3D3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="11c" lane="C3D3_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+        <!-- kruispunt links midden-->
+    <e1Detector id="12" lane="B3B2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="13" lane="B1B2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="14" lane="C2B2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="15" lane="A2B2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="12c" lane="B3B2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="13c" lane="B1B2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="14c" lane="C2B2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="15c" lane="A2B2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+	
+        <!-- kruispunt midden midden-->
+    <e1Detector id="16" lane="C3C2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="17" lane="C1C2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="18" lane="D2C2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="19" lane="B2C2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="16c" lane="C3C2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="17c" lane="C1C2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="18c" lane="D2C2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="19c" lane="B2C2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+        <!-- kruispunt rechts midden-->
+    <e1Detector id="20" lane="D3D2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="21" lane="D1D2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="22" lane="E2D2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="23" lane="C2D2_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="20c" lane="D3D2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="21c" lane="D1D2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="22c" lane="E2D2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="23c" lane="C2D2_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+        <!-- kruispunt links onder-->
+    <e1Detector id="24" lane="B2B1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="25" lane="B0B1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="26" lane="C1B1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="27" lane="A1B1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="24c" lane="B2B1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="25c" lane="B0B1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="26c" lane="C1B1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="27c" lane="A1B1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+	
+        <!-- kruispunt midden onder-->
+    <e1Detector id="28" lane="C2C1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="29" lane="C0C1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="30" lane="D1C1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="31" lane="B1C1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="28c" lane="C2C1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="29c" lane="C0C1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="30c" lane="D1C1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="31c" lane="B1C1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+        <!-- kruispunt rechts onder-->
+    <e1Detector id="32" lane="D2D1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="33" lane="D0D1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="34" lane="E1D1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="35" lane="C1D1_0" pos="450" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="32c" lane="D2D1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="33c" lane="D0D1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="34c" lane="E1D1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+    <e1Detector id="35c" lane="C1D1_0" pos="500" freq="30" file="cross.out" friendlyPos="x"/>
+
+</add>
