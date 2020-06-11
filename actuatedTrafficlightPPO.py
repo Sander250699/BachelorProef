@@ -170,15 +170,11 @@ if __name__ == "__main__":
                         indent=4)                                               # generating a string version of flow_params
     config['env_config']['flow_params'] = flow_json                             # adding the flow_params to config dict
     config['env_config']['run'] = alg_run
-
     # Call the utility function make_create_env to be able to 
     # register the Flow env for this experiment
     create_env, gym_name = make_create_env(params=flow_params, version=0)
-
     # Register as rllib env with Gym
     register_env(gym_name, create_env)
-
-
     trials = run_experiments({
         flow_params["exp_tag"]: {
             "run": alg_run,
@@ -195,19 +191,7 @@ if __name__ == "__main__":
         },
     })
     # Vragen: => wat zijn de ideale checkpoint_freq en training_iteration? Of moet dit proefondervindelijk gevonden worden
-
-
-    '''
-    # runnen van de simulatie
-    #number of time steps
-    print("run 1")
-    flow_params['env'].horizon = 3000
-    exp = Experiment(flow_params)
-    #run the simulation
-    _ = exp.run(1, convert_to_csv=False)
-    print("run 2")
-    flow_params['env'].horizon = 3000
-    exp = Experiment(flow_params)
-    #run the simulation
-    _ = exp.run(1, convert_to_csv=False)
-    '''
+    # hiervoor al een agent getrained, de resulaten kunnen zichtbaar worden met: 
+    # python flow/flow/visualize/visualizer_rllib.py ray_results/RL_traffic_lights_one_by_one/PPO_TrafficLightGridPOEnv-v0_0_2020-06-11_12-32-00t3_sa_ne/ 500 
+    # Zijn dit goede waarden? 
+    
