@@ -83,8 +83,8 @@ def getOmgeving(HORIZON):
         inflow.add(
             veh_type="human",
             edge=edge,
-            #vehs_per_hour=edge_inflow,
-            probability=prob,
+            vehs_per_hour=edge_inflow,
+            #probability=prob,
             depart_lane="free",
             depart_speed=enterSpeed)
 
@@ -104,7 +104,7 @@ def getOmgeving(HORIZON):
     # => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
     additional_env_params = {
         "switch_time": 3.0, 
-        "tl_type": "actuated",                # kan ook actuated/controlled zijn
+        "tl_type": "controlled",                # kan ook actuated/controlled zijn
         "discrete": True, 
         "num_observed":2,
         "target_velocity": 50
@@ -155,9 +155,11 @@ if __name__ == "__main__":
         # de nodige parameters
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
+    # site rllib staan alle params => https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py
     config["num_workers"] = N_CPUS - 1
     config["horizon"] = HORIZON
     config["train_batch_size"] = HORIZON * N_ROLLOUTS
+    config["s"] = 0.9
     # dueling, DQN maakt gebruik van een deep neural network ipv een Q table
     # bij dueling gaat men 2 van deze neural networks gaan gebruiken
     # Input = observation 

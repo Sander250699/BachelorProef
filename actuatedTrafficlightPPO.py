@@ -5,6 +5,7 @@ from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, In
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
+
 import os 
 import pandas as pd
 # import voor de agent 
@@ -57,8 +58,7 @@ def getOmgeving(HORIZON):
                 car_following_params=SumoCarFollowingParams(
                     speed_mode="right_of_way",
                     min_gap=2.5,
-                    max_speed=enterSpeed,
-                    decel=7.5, 
+                    max_speed=enterSpeed, 
                 ),
                 routing_controller=(GridRouter, {}),
                 num_vehicles=tot_cars)
@@ -83,10 +83,10 @@ def getOmgeving(HORIZON):
         inflow.add(
             veh_type="human",
             edge=edge,
-            #vehs_per_hour=edge_inflow,
-            probability=prob,
+            vehs_per_hour=edge_inflow,
+            #probability=prob,
             depart_lane="free",
-            depart_speed=enterSpeed)
+            depart_speed="max")
 
     # Net Params
     additional_net_params = {
@@ -94,7 +94,6 @@ def getOmgeving(HORIZON):
         "grid_array": grid_array, 
         "horizontal_lanes": 1, 
         "vertical_lanes": 1,
-        #"traffic_lights": True}
     }
     net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
@@ -103,10 +102,10 @@ def getOmgeving(HORIZON):
     # => num_observed aantal vehicles dat geobservered wordt vanuit elke richting van het kruispunt
     # => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
     additional_env_params = {
-        "switch_time": 3.0, 
+        "switch_time": 2, 
         "tl_type": "actuated",                # kan ook actuated/controlled zijn
         "discrete": True, 
-        "num_observed":2,
+        "num_observed":5,
         "target_velocity": 50
         }
     env_params = EnvParams( horizon=HORIZON, additional_params=additional_env_params)
@@ -117,7 +116,7 @@ def getOmgeving(HORIZON):
     # Flow Params
     flow_param = dict(
         # name of the experiment
-        exp_tag="RL_traffic_lights_one_by_one",
+        exp_tag="test_one_by_one_static",
         # name of the flow environment the experiment is running on
         env_name=TrafficLightGridPOEnv,
         # name of the network class the experiment uses
@@ -157,14 +156,15 @@ if __name__ == "__main__":
     config = agent_cls._default_config.copy()
     config["num_workers"] = N_CPUS - 1                                          # number of parallel workers
     config["train_batch_size"] = HORIZON * N_ROLLOUTS                           # batch size
-    config["gamma"] = 0.9                                                       # discount rate, hoe hoger deze waarde hoe belangrijker de toekomstige rewards zijn
-    config["model"].update({"fcnet_hiddens": [16, 16]})                         # size of hidden layers in network
+    config["gamma"] = 0.97                                                      # discount rate, hoe hoger deze waarde hoe belangrijker de toekomstige rewards zijn, men moet wel langer trainen dan 
+    config["model"].update({"fcnet_hiddens": [256, 256]})                       # eerder naar de 128, 256 gaan kijken, size of hidden layers in network => 16 in dit geval
     config["use_gae"] = True                                                    # using generalized advantage estimation
-    config["lambda"] = 0.97                                                     # ALPHA?
-    config["sgd_minibatch_size"] = min(16 * 1024, config["train_batch_size"])   # stochastic gradient descent
-    config["kl_target"] = 0.02                                                  # target KL divergence
-    config["num_sgd_iter"] = 10                                                 # number of SGD iterations
+    config["lambda"] = 0.97                                                     # This generalized estimator of the advantage function allows a trade-off of bias vs variance
+    config["sgd_minibatch_size"] = min(16 * 1024, config["train_batch_size"])   # stochastic gradient descent => zoeken naar een minima door "random" rond te springen, waardoor men bv niet in 1 minima kan blijven vastzitten
+    config["kl_target"] = 0.02                                                  # target KL divergence = Kullback–Leibler divergence, it is a measure of surprise, hoe verschilt 1 probability distribution van een referentie probability distribution
+    config["num_sgd_iter"] = 10                                                 # number of SGD iterations => hiermee gaat men dan 10 keer "rondspringen"?
     config["horizon"] = HORIZON                                                 # rollout horizon
+    # de learning rate staat op 5e-5 => default
     # save the flow params for replay
     flow_json = json.dumps(flow_params, cls=FlowParamsEncoder, sort_keys=True,
                         indent=4)                                               # generating a string version of flow_params

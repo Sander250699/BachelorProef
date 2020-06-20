@@ -93,7 +93,7 @@ def getOmgeving(HORIZON):
     # => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
     additional_env_params = {
         "switch_time": 3.0, 
-        "tl_type": "actuated",                # kan ook actuated/controlled zijn
+        "tl_type": "controlled",                # kan ook actuated/controlled zijn
         "discrete": True, 
         "num_observed":2,
         "target_velocity": 50
@@ -139,7 +139,4 @@ if __name__ == "__main__":
     flow_params['env'].horizon = 400
     exp = Experiment(flow_params)
     #run the simulation
-    _ = exp.run(1, convert_to_csv=True)
-    emission_location = os.path.join(exp.env.sim_params.emission_path, exp.env.network.name)
-    print(emission_location + '-emission.xml')
-    pd.read_csv(emission_location + '-emission.csv')
+    _ = exp.run(1, convert_to_csv=False)
