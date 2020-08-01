@@ -3,7 +3,7 @@ from flow.networks.traffic_light_grid import TrafficLightGridNetwork
 from flow.core.params import SumoParams, EnvParams, NetParams, InitialConfig, InFlows, SumoCarFollowingParams, VehicleParams, \
     InFlows, NetParams, TrafficLightParams
 from flow.controllers import SimCarFollowingController, GridRouter
-from flow.envs import TrafficLightGridPOEnv, TrafficLightGridEnv
+from flow.envs import TrafficLightGridPOEnv
 from flow.core.experiment import Experiment
 
 import os 
@@ -83,8 +83,8 @@ def getOmgeving(HORIZON):
         inflow.add(
             veh_type="human",
             edge=edge,
-            #vehs_per_hour=edge_inflow,
-            probability=prob,
+            vehs_per_hour=edge_inflow,
+            #probability=prob,
             depart_lane="free",
             depart_speed="max")
 
@@ -116,7 +116,7 @@ def getOmgeving(HORIZON):
     # Flow Params
     flow_param = dict(
         # name of the experiment
-        exp_tag="test_one_by_one",
+        exp_tag="test_obo_static_diffgain",
         # name of the flow environment the experiment is running on
         env_name=TrafficLightGridPOEnv,
         # name of the network class the experiment uses
@@ -151,6 +151,54 @@ if __name__ == "__main__":
         object_store_memory=50*1024*1024
     )
 
+    alg_run = "PPO"
+
+    horizon = flow_params["env"].horizon
+    agent_cls = get_agent_class(alg_run)
+    config = agent_cls._default_config.copy()
+    config["num_workers"] = min(N_CPUS, N_ROLLOUTS)
+    config["train_batch_size"] = horizon * N_ROLLOUTS
+    config["use_gae"] = True
+    config["horizon"] = horizon
+    gae_lambda = 0.99           # orgineel => 0.97
+    step_size = 3e-6            # orgineel => 5e-6
+    config["lambda"] = gae_lambda
+    config["lr"] = step_size
+    config["vf_clip_param"] = 1e6
+    config["num_sgd_iter"] = 10
+    config['clip_actions'] = False  # FIXME(ev) temporary ray bug
+    #config["model"]["fcnet_hiddens"] = [100, 50, 25]
+    config["model"]["fcnet_hiddens"] = [128, 128]
+    config["observation_filter"] = "NoFilter"
+
+    # save the flow params for replay
+    flow_json = json.dumps(
+        flow_params, cls=FlowParamsEncoder, sort_keys=True, indent=4)
+    config['env_config']['flow_params'] = flow_json
+    config['env_config']['run'] = alg_run
+    # Call the utility function make_create_env to be able to 
+    # register the Flow env for this experiment
+    create_env, gym_name = make_create_env(params=flow_params, version=0)
+    # Register as rllib env with Gym
+    register_env(gym_name, create_env)
+    trials = run_experiments({
+        flow_params["exp_tag"]: {
+            "run": alg_run,
+            "env": gym_name,
+            "config": {
+                **config
+            },
+            "checkpoint_freq": 100,                   # number of iterations between checkpoints
+            "checkpoint_at_end": True,              # generate a checkpoint at the end
+            "max_failures": 999,
+            "stop": {                               # stopping conditions
+                "training_iteration": 2500,            # number of iterations to stop after
+            },
+        },
+    })
+    
+
+    '''
     alg_run = "PPO"
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
@@ -190,6 +238,8 @@ if __name__ == "__main__":
             },
         },
     })
+    '''
+
     # Vragen: => wat zijn de ideale checkpoint_freq en training_iteration? Of moet dit proefondervindelijk gevonden worden
     # hiervoor al een agent getrained, de resulaten kunnen zichtbaar worden met: 
     # python flow/flow/visualize/visualizer_rllib.py ray_results/RL_traffic_lights_one_by_one/PPO_TrafficLightGridPOEnv-v0_0_2020-06-11_12-32-00t3_sa_ne/ 500 

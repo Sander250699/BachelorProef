@@ -58,7 +58,6 @@ def getOmgeving(HORIZON):
                     speed_mode="right_of_way",
                     min_gap=2.5,
                     max_speed=enterSpeed,
-                    decel=7.5, 
                 ),
                 routing_controller=(GridRouter, {}),
                 num_vehicles=tot_cars)
@@ -86,7 +85,7 @@ def getOmgeving(HORIZON):
             vehs_per_hour=edge_inflow,
             #probability=prob,
             depart_lane="free",
-            depart_speed=enterSpeed)
+            depart_speed="max")
 
     # Net Params
     additional_net_params = {
@@ -94,7 +93,6 @@ def getOmgeving(HORIZON):
         "grid_array": grid_array, 
         "horizontal_lanes": 1, 
         "vertical_lanes": 1,
-        #"traffic_lights": True}
     }
     net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
@@ -103,10 +101,10 @@ def getOmgeving(HORIZON):
     # => num_observed aantal vehicles dat geobservered wordt vanuit elke richting van het kruispunt
     # => target_velocity is de snelheid dat elk voertuig moet proberen te behalen wanneer deze zich op het kruispunt bevindt
     additional_env_params = {
-        "switch_time": 3.0, 
-        "tl_type": "controlled",                # kan ook actuated/controlled zijn
+        "switch_time": 2, 
+        "tl_type": "actuated",                # kan ook actuated/controlled zijn
         "discrete": True, 
-        "num_observed":2,
+        "num_observed":5,
         "target_velocity": 50
         }
     env_params = EnvParams( horizon=HORIZON, additional_params=additional_env_params)
@@ -117,7 +115,7 @@ def getOmgeving(HORIZON):
     # Flow Params
     flow_param = dict(
         # name of the experiment
-        exp_tag="RL_traffic_lights_one_by_one",
+        exp_tag="DQN_obo_static",
         # name of the flow environment the experiment is running on
         env_name=TrafficLightGridPOEnv,
         # name of the network class the experiment uses
@@ -145,21 +143,20 @@ if __name__ == "__main__":
     HORIZON = 400
     flow_params = getOmgeving(HORIZON)
     N_CPUS = 2
-    N_ROLLOUTS = 2
+    N_ROLLOUTS = 1
     ray.init(
         num_cpus=N_CPUS,
         object_store_memory=50*1024*1024
     )
-
     alg_run = "DQN"
         # de nodige parameters
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
     # site rllib staan alle params => https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py
-    config["num_workers"] = N_CPUS - 1
+    config["num_workers"] = min(N_CPUS,N_ROLLOUTS)
     config["horizon"] = HORIZON
     config["train_batch_size"] = HORIZON * N_ROLLOUTS
-    config["s"] = 0.9
+    config["lr"] = 3e-6
     # dueling, DQN maakt gebruik van een deep neural network ipv een Q table
     # bij dueling gaat men 2 van deze neural networks gaan gebruiken
     # Input = observation 
@@ -187,11 +184,11 @@ if __name__ == "__main__":
             "config": {
                 **config
             },
-            "checkpoint_freq": 1,                   # number of iterations between checkpoints
+            "checkpoint_freq": 50,                   # number of iterations between checkpoints
             "checkpoint_at_end": True,              # generate a checkpoint at the end
             "max_failures": 999,
             "stop": {                               # stopping conditions
-                "training_iteration": 1,            # number of iterations to stop after
+                "training_iteration": 500,            # number of iterations to stop after
             },
         },
     })

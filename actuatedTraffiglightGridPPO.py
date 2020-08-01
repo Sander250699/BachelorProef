@@ -22,11 +22,13 @@ def getOmgeving(HORIZON):
     sim_params = SumoParams(render=False, sim_step=1,restart_instance=True)
     '''
     Opstelling van het netwerk:
-        |   |   |
-    -6---7---8--
-    -3---4---5--
-    -0---1---2--
-        |   |   | 
+         |   |   |
+       --6---7---8--
+         |   |   |
+       --3---4---5--
+         |   |   |
+       --0---1---2--
+         |   |   | 
     '''
 
     # bij deze code is er het probleem dat de de routes niet gekend zijn in de simulatie, de voertuigen kunnen gen gedefinieerde route volgen
@@ -62,8 +64,7 @@ def getOmgeving(HORIZON):
         car_following_params=SumoCarFollowingParams(
             speed_mode="right_of_way",
             min_gap=2.5,
-            max_speed=enterSpeed,
-            decel=7.5,   
+            max_speed=enterSpeed,  
         ),
         routing_controller=(GridRouter, {}),
         num_vehicles=tot_cars)
@@ -115,18 +116,17 @@ def getOmgeving(HORIZON):
     # net params 
     additional_net_params = {
         "grid_array": grid_array, 
-        "speed_limit": 50,
+        "speed_limit": enterSpeed + 5,
         "horizontal_lanes": 1, 
-        "vertical_lanes": 1}
-        #"traffic_lights": True}
+        "vertical_lanes": 1,}
     net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
     # env params
     additional_env_params = {
-        "switch_time": 3.0, 
-        "tl_type": "controlled", 
+        "switch_time": 2, 
+        "tl_type": "actuated", 
         "discrete": True, 
-        "num_observed":2,
+        "num_observed":5,
         "target_velocity": 50
         }
     env_params = EnvParams(horizon=HORIZON, additional_params=additional_env_params)
@@ -136,7 +136,7 @@ def getOmgeving(HORIZON):
     # flow params
     flow_param = dict(
         # name of the experiment
-        exp_tag="RL_StaticInflow_grid",
+        exp_tag="test_grid_static_diffgain",
         # name of the flow environment the experiment is running on
         env_name=TrafficLightGridPOEnv,
         # name of the network class the experiment uses
@@ -160,32 +160,40 @@ def getOmgeving(HORIZON):
     return flow_param
 
 if __name__ == "__main__":
-    HORIZON = 400               # Time horizon of a single rollout
+    HORIZON = 400               # Time horizon of a single rollout, simulatie step = 1 sec => 400 seconden loopt de simulatie
     flow_params = getOmgeving(HORIZON)
+    # initialiseren van ray 
     N_CPUS = 2
-    N_ROLLOUTS = 2
+    N_ROLLOUTS = 1
     ray.init(
         num_cpus=N_CPUS,
         object_store_memory=50*1024*1024
     )
+
     alg_run = "PPO"
+
+    horizon = flow_params["env"].horizon
     agent_cls = get_agent_class(alg_run)
     config = agent_cls._default_config.copy()
-    config["num_workers"] = N_CPUS - 1                                          # number of parallel workers
-    config["train_batch_size"] = HORIZON * N_ROLLOUTS                           # batch size
-    config["gamma"] = 0.97                                                      # discount rate, hoe hoger deze waarde hoe belangrijker de toekomstige rewards zijn, men moet wel langer trainen dan 
-    config["model"].update({"fcnet_hiddens": [256, 256]})                       # eerder naar de 128, 256 gaan kijken, size of hidden layers in network => 16 in dit geval
-    config["use_gae"] = True                                                    # using generalized advantage estimation
-    config["lambda"] = 0.97                                                     # This generalized estimator of the advantage function allows a trade-off of bias vs variance
-    config["sgd_minibatch_size"] = min(16 * 1024, config["train_batch_size"])   # stochastic gradient descent => zoeken naar een minima door "random" rond te springen, waardoor men bv niet in 1 minima kan blijven vastzitten
-    config["kl_target"] = 0.02                                                  # target KL divergence = Kullback–Leibler divergence, it is a measure of surprise, hoe verschilt 1 probability distribution van een referentie probability distribution
-    config["num_sgd_iter"] = 10                                                 # number of SGD iterations => hiermee gaat men dan 10 keer "rondspringen"?
-    config["horizon"] = HORIZON                                                 # rollout horizon
-    # de learning rate staat op 5e-5 => default
+    config["num_workers"] = min(N_CPUS, N_ROLLOUTS)
+    config["train_batch_size"] = horizon * N_ROLLOUTS
+    config["use_gae"] = True
+    config["horizon"] = horizon
+    gae_lambda = 0.5           # orgineel => 0.97
+    step_size = 1e-5            # orgineel => 5e-6
+    config["lambda"] = gae_lambda
+    config["lr"] = step_size
+    config["vf_clip_param"] = 1e6
+    config["num_sgd_iter"] = 10
+    config['clip_actions'] = False  # FIXME(ev) temporary ray bug
+    #config["model"]["fcnet_hiddens"] = [100, 50, 25]
+    config["model"]["fcnet_hiddens"] = [128, 128]
+    config["observation_filter"] = "NoFilter"
+
     # save the flow params for replay
-    flow_json = json.dumps(flow_params, cls=FlowParamsEncoder, sort_keys=True,
-                        indent=4)                                               # generating a string version of flow_params
-    config['env_config']['flow_params'] = flow_json                             # adding the flow_params to config dict
+    flow_json = json.dumps(
+        flow_params, cls=FlowParamsEncoder, sort_keys=True, indent=4)
+    config['env_config']['flow_params'] = flow_json
     config['env_config']['run'] = alg_run
     # Call the utility function make_create_env to be able to 
     # register the Flow env for this experiment
@@ -199,11 +207,11 @@ if __name__ == "__main__":
             "config": {
                 **config
             },
-            "checkpoint_freq": 10,                   # number of iterations between checkpoints
+            "checkpoint_freq": 100,                   # number of iterations between checkpoints
             "checkpoint_at_end": True,              # generate a checkpoint at the end
             "max_failures": 999,
             "stop": {                               # stopping conditions
-                "training_iteration": 500,            # number of iterations to stop after
+                "training_iteration":2500,            # number of iterations to stop after
             },
         },
     })
